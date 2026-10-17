@@ -1,0 +1,37 @@
+project:
+  name: pneumonia_detection
+  seed: 42
+
+data:
+  dataset: rsna
+  raw_dir: data/raw
+  images_dir: data/raw/stage_2_train_images
+  test_images_dir: data/raw/stage_2_test_images
+  labels_csv: data/raw/stage_2_train_labels.csv
+  detailed_csv: data/raw/stage_2_detailed_class_info.csv
+  img_size: 224
+  num_workers: 8
+  classes: [NORMAL, PNEUMONIA]
+  max_samples: 20000
+
+model:
+  backbone: efficientnet_b0
+  pretrained: true
+  num_classes: 2
+  dropout: 0.5
+  multi_task: true
+
+training:
+  epochs: 20
+  batch_size: 32
+  lr: 0.00005
+  weight_decay: 0.001
+  early_stopping_patience: 7
+  mixed_precision: true
+  use_class_weights: true
+  stage_weight: 0.3
+
+paths:
+  checkpoint_dir: models/
+  log_dir: logs/
+  report_dir: reports/

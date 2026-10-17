@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pneumonia Detection · Medical AI</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon">🩺</div>
+            <div>
+                <h1>Pneumonia Detection</h1>
+                <p class="subtitle">AI-Powered Chest X-Ray Analysis</p>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="status">
+                <span class="status-dot"></span>
+                <span id="device-status">Loading...</span>
+            </div>
+            <div class="user-profile">
+                <span class="user-name">👨‍⚕️ {{ username }}</span>
+                <a href="/logout" class="btn-logout">Logout</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="upload-panel">
+            <h2>Upload Chest X-Ray</h2>
+            <p class="panel-desc">Supported formats: DICOM (.dcm), PNG, JPG</p>
+
+            <div class="dropzone" id="dropzone">
+                <!-- All formats accepted -->
+                <input type="file" id="file-input" accept=".dcm,.png,.jpg,.jpeg" hidden>
+                <div class="dropzone-content">
+                    <div class="dropzone-icon">📤</div>
+                    <p class="dropzone-title">Drop X-ray here or click to browse</p>
+                    <p class="dropzone-sub">Max file size: 16 MB</p>
+                </div>
+            </div>
+
+            <div class="preview-container" id="preview-container" hidden>
+                <img id="preview-image" src="" alt="X-ray preview">
+                <div class="preview-info">
+                    <p id="preview-filename"></p>
+                    <button id="clear-btn" class="btn-secondary">Choose different image</button>
+                </div>
+            </div>
+
+            <button id="analyze-btn" class="btn-primary" disabled>
+                <span class="btn-icon">🔬</span>
+                Analyze X-Ray
+            </button>
+        </section>
+
+        <div class="loading" id="loading" hidden>
+            <div class="spinner"></div>
+            <p>Analyzing X-ray...</p>
+        </div>
+
+        <section class="results-panel" id="results" hidden>
+            <div class="results-header">
+                <h2>Analysis Results</h2>
+                <button id="new-analysis-btn" class="btn-secondary">New Analysis</button>
+            </div>
+
+            <div class="prediction-card" id="prediction-card">
+                <div class="prediction-main">
+                    <div class="prediction-label">
+                        <span class="prediction-badge" id="prediction-badge">NORMAL</span>
+                        <span class="prediction-confidence" id="prediction-confidence">0%</span>
+                    </div>
+                    <p class="prediction-desc" id="prediction-desc">Confidence score</p>
+                </div>
+            </div>
+
+            <div class="confidence-section">
+                <h3>Probability Breakdown</h3>
+                <div class="bar-group">
+                    <div class="bar-label">
+                        <span>Normal</span>
+                        <span id="normal-pct">0%</span>
+                    </div>
+                    <div class="bar-track">
+                        <div class="bar-fill normal" id="normal-bar"></div>
+                    </div>
+                </div>
+                <div class="bar-group">
+                    <div class="bar-label">
+                        <span>Pneumonia</span>
+                        <span id="pneumonia-pct">0%</span>
+                    </div>
+                    <div class="bar-track">
+                        <div class="bar-fill pneumonia" id="pneumonia-bar"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stage-section" id="stage-section" hidden>
+                <h3>Severity Stage</h3>
+                <div class="stage-badge-container">
+                    <span class="stage-badge" id="stage-badge">MILD</span>
+                    <span class="stage-confidence" id="stage-confidence">0%</span>
+                </div>
+                <div class="stage-bars">
+                    <div class="stage-bar-group">
+                        <div class="bar-label"><span>Mild</span><span id="mild-pct">0%</span></div>
+                        <div class="bar-track"><div class="bar-fill mild" id="mild-bar"></div></div>
+                    </div>
+                    <div class="stage-bar-group">
+                        <div class="bar-label"><span>Moderate</span><span id="moderate-pct">0%</span></div>
+                        <div class="bar-track"><div class="bar-fill moderate" id="moderate-bar"></div></div>
+                    </div>
+                    <div class="stage-bar-group">
+                        <div class="bar-label"><span>Severe</span><span id="severe-pct">0%</span></div>
+                        <div class="bar-track"><div class="bar-fill severe" id="severe-bar"></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="images-section">
+                <h3>Explainability (Grad-CAM)</h3>
+                <p class="section-desc">Red regions indicate areas the AI focused on for its decision.</p>
+                <div class="images-grid">
+                    <div class="image-card">
+                        <p class="image-title">Original X-Ray</p>
+                        <img id="result-original" src="" alt="Original">
+                    </div>
+                    <div class="image-card">
+                        <p class="image-title">AI Attention Map</p>
+                        <img id="result-gradcam" src="" alt="Grad-CAM">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div class="error-box" id="error-box" hidden>
+            <p id="error-message"></p>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>Pneumonia Detection AI · Powered by EfficientNet-B0 · RSNA Dataset</p>
+    </footer>
+
+    <script>
+        const fileInput = document.getElementById('file-input');
+        const dropzone = document.getElementById('dropzone');
+        const previewContainer = document.getElementById('preview-container');
+        const previewImage = document.getElementById('preview-image');
+        const previewFilename = document.getElementById('preview-filename');
+        const analyzeBtn = document.getElementById('analyze-btn');
+        const clearBtn = document.getElementById('clear-btn');
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+        const errorBox = document.getElementById('error-box');
+        const newAnalysisBtn = document.getElementById('new-analysis-btn');
+        const deviceStatus = document.getElementById('device-status');
+
+        let selectedFile = null;
+
+        fetch('/health').then(r => r.json()).then(data => {
+            deviceStatus.textContent = `${data.device.toUpperCase()}`;
+        }).catch(() => {
+            deviceStatus.textContent = 'Offline';
+        });
+
+        dropzone.addEventListener('click', () => fileInput.click());
+
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('dragover');
+        });
+
+        dropzone.addEventListener('dragleave', () => {
+            dropzone.classList.remove('dragover');
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            selectedFile = file;
+            previewFilename.textContent = file.name;
+
+            if (file.name.toLowerCase().endsWith('.dcm')) {
+                previewImage.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"><rect width="300" height="300" fill="%231a2332"/><text x="150" y="150" font-size="80" text-anchor="middle" fill="%2300d4ff">DICOM</text></svg>';
+            } else {
+                const reader = new FileReader();
+                reader.onload = (e) => previewImage.src = e.target.result;
+                reader.readAsDataURL(file);
+            }
+
+            previewContainer.hidden = false;
+            dropzone.hidden = true;
+            analyzeBtn.disabled = false;
+            errorBox.hidden = true;
+        }
+
+        clearBtn.addEventListener('click', () => {
+            selectedFile = null;
+            fileInput.value = '';
+            previewContainer.hidden = true;
+            dropzone.hidden = false;
+            analyzeBtn.disabled = true;
+            errorBox.hidden = true;
+        });
+
+        analyzeBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+
+            loading.hidden = false;
+            results.hidden = true;
+            errorBox.hidden = true;
+            analyzeBtn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Prediction failed');
+                }
+
+                showResults(data);
+            } catch (err) {
+                errorBox.hidden = false;
+                document.getElementById('error-message').textContent = err.message;
+            } finally {
+                loading.hidden = true;
+                analyzeBtn.disabled = false;
+            }
+        });
+
+        function showResults(data) {
+            const badge = document.getElementById('prediction-badge');
+            const card = document.getElementById('prediction-card');
+
+            badge.textContent = data.label;
+            badge.className = 'prediction-badge';
+
+            if (data.label === 'PNEUMONIA') {
+                badge.classList.add('danger');
+                card.classList.add('danger');
+            } else {
+                badge.classList.add('safe');
+                card.classList.remove('danger');
+            }
+
+            document.getElementById('prediction-confidence').textContent = `${data.confidence.toFixed(2)}%`;
+            document.getElementById('normal-pct').textContent = `${data.normal_prob.toFixed(2)}%`;
+            document.getElementById('pneumonia-pct').textContent = `${data.pneumonia_prob.toFixed(2)}%`;
+            document.getElementById('normal-bar').style.width = `${data.normal_prob}%`;
+            document.getElementById('pneumonia-bar').style.width = `${data.pneumonia_prob}%`;
+
+            if (data.stage) {
+                document.getElementById('stage-section').hidden = false;
+                document.getElementById('stage-badge').textContent = data.stage;
+                document.getElementById('stage-confidence').textContent = `${data.stage_confidence.toFixed(2)}%`;
+                document.getElementById('mild-pct').textContent = `${data.mild_prob.toFixed(2)}%`;
+                document.getElementById('moderate-pct').textContent = `${data.moderate_prob.toFixed(2)}%`;
+                document.getElementById('severe-pct').textContent = `${data.severe_prob.toFixed(2)}%`;
+                document.getElementById('mild-bar').style.width = `${data.mild_prob}%`;
+                document.getElementById('moderate-bar').style.width = `${data.moderate_prob}%`;
+                document.getElementById('severe-bar').style.width = `${data.severe_prob}%`;
+            } else {
+                document.getElementById('stage-section').hidden = true;
+            }
+
+            document.getElementById('result-original').src = data.original_image;
+            document.getElementById('result-gradcam').src = data.gradcam_image;
+
+            results.hidden = false;
+            results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        newAnalysisBtn.addEventListener('click', () => {
+            results.hidden = true;
+            selectedFile = null;
+            fileInput.value = '';
+            previewContainer.hidden = true;
+            dropzone.hidden = false;
+            analyzeBtn.disabled = true;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    </script>
+</body>
+</html>

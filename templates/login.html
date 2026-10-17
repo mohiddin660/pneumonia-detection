@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login · Medical AI Portal</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body class="login-body">
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="logo-icon">🩺</div>
+                <h1>Medical AI Portal</h1>
+                <p>Secure Access</p>
+            </div>
+
+            <form action="/login" method="POST" class="login-form">
+                <div class="input-group">
+                    <label>Doctor ID</label>
+                    <input type="text" name="username" placeholder="e.g. Dr. Syed" required>
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" name="password" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn-primary">Secure Login</button>
+            </form>
+
+            <div class="login-footer">
+                <p>Authorized Personnel Only</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

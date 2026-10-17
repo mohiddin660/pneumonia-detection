@@ -1,0 +1,13 @@
+# Ignore datasets (Too big for GitHub)
+data/
+.venv/
+models/best_old.pt
+models/*.ckpt
+
+# Ignore temporary files
+__pycache__/
+*.pyc
+static/uploads/
+logs/
+.idea/
+.DS_Store

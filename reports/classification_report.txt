@@ -1,0 +1,19 @@
+BINARY CLASSIFICATION REPORT
+======================================================================
+accuracy: 0.7017237072195853
+precision: 0.42655935613682094
+recall: 0.9401330376940134
+f1: 0.5868512110726644
+auc: 0.8892489440857002
+n_samples: 4003
+n_normal: 3101
+n_pneumonia: 902
+
+              precision    recall  f1-score   support
+
+      NORMAL     0.9732    0.6324    0.7666      3101
+   PNEUMONIA     0.4266    0.9401    0.5869       902
+
+    accuracy                         0.7017      4003
+   macro avg     0.6999    0.7863    0.6767      4003
+weighted avg     0.8500    0.7017    0.7261      4003
